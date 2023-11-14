@@ -1,30 +1,25 @@
+let provider;
+let signer;
+
 document.getElementById('connectWallet').addEventListener('click', async () => {
-    if (window.ethereum) {
-        try {
-            // Request account access
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            // Handle the accounts
-            // Enable the send message button
-            document.getElementById('sendMessage').disabled = false;
-        } catch (error) {
-            console.error(error);
-        }
-    } else {
-        alert('MetaMask is not installed!');
-    }
+  provider = new WalletConnectProvider.default({
+    infuraId: "3bc53c38485841ce9cfa1f539ebc4cfc" // Replace with your Infura ID
+  });
+
+  await provider.enable();
+  const web3Provider = new ethers.providers.Web3Provider(provider);
+  signer = web3Provider.getSigner();
+
+  document.getElementById('signMessage').disabled = false;
 });
 
-document.getElementById('sendMessage').addEventListener('click', async () => {
-    if (!window.ethereum) return alert('Please connect to MetaMask.');
-
-    try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-
-        // Prompt user to sign a message
-        const signature = await signer.signMessage("Hello World");
-        console.log('Signed Message:', signature);
-    } catch (error) {
-        console.error(error);
-    }
+document.getElementById('signMessage').addEventListener('click', async () => {
+  try {
+    const response = await fetch('/api/createMessage', { method: 'POST' });
+    const data = await response.json();
+    const signature = await signer.signMessage(data.message);
+    document.getElementById('signature').innerText = `Signature: ${signature}`;
+  } catch (error) {
+    console.error('Error:', error);
+  }
 });
